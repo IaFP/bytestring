@@ -6,6 +6,10 @@
 #if __GLASGOW_HASKELL__ >= 703
 {-# LANGUAGE Unsafe #-}
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors, TypeOperators, TypeFamilies #-}
+#endif
+
 {-# OPTIONS_HADDOCK not-home #-}
 -- | Copyright : (c) 2010 - 2011 Simon Meier
 -- License     : BSD3-style (see LICENSE)
@@ -170,6 +174,9 @@ import           System.IO.Unsafe (unsafeDupablePerformIO)
 import           Foreign
 import           GHC.IO (unsafeDupablePerformIO)
 #endif
+#if MIN_VERSION_base(4,14,0)
+import           GHC.Types(type (@@))
+#endif
 
 ------------------------------------------------------------------------------
 -- Buffers
@@ -284,6 +291,9 @@ data BuildSignal a =
       {-# UNPACK #-} !(Ptr Word8)
                      S.ByteString
                      (BuildStep a)
+#if MIN_VERSION_base(4,14,0)
+type instance BuildSignal @@ a = ()
+#endif
 
 -- | Signal that the current 'BuildStep' is done and has computed a value.
 {-# INLINE done #-}
@@ -815,6 +825,7 @@ ensureFree :: Int -> Builder
 ensureFree minFree =
     builder step
   where
+    step :: forall a. BuildStep a -> BuildStep a
     step k br@(BufferRange op ope)
       | ope `minusPtr` op < minFree = return $ bufferFull minFree op k
       | otherwise                   = k br
@@ -857,6 +868,7 @@ byteStringThreshold :: Int -> S.ByteString -> Builder
 byteStringThreshold maxCopySize =
     \bs -> builder $ step bs
   where
+    step :: S.ByteString -> (forall a. BuildStep a -> BuildStep a)
     step !bs@(S.PS _ _ len) !k br@(BufferRange !op _)
       | len <= maxCopySize = byteStringCopyStep bs k br
       | otherwise          = return $ insertChunk op bs k

@@ -3,6 +3,9 @@
 #if __GLASGOW_HASKELL__ >= 703
 {-# LANGUAGE Unsafe #-}
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors #-}
+#endif
 {-# OPTIONS_HADDOCK not-home #-}
 
 -- |

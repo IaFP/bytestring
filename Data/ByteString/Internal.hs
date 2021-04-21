@@ -4,6 +4,9 @@
 #if __GLASGOW_HASKELL__ >= 703
 {-# LANGUAGE Unsafe #-}
 #endif
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PartialTypeConstructors #-}
+#endif
 {-# OPTIONS_HADDOCK not-home #-}
 
 -- |
@@ -184,7 +187,6 @@ instance Data ByteString where
   toConstr _     = error "Data.ByteString.ByteString.toConstr"
   gunfold _ _    = error "Data.ByteString.ByteString.gunfold"
   dataTypeOf _   = mkNoRepType "Data.ByteString.ByteString"
-
 ------------------------------------------------------------------------
 -- Packing and unpacking from lists
 
