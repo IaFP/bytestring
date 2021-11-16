@@ -175,7 +175,7 @@ import           Foreign
 import           GHC.IO (unsafeDupablePerformIO)
 #endif
 #if MIN_VERSION_base(4,14,0)
-import           GHC.Types(type (@@))
+import           GHC.Types(type (@@), Total)
 #endif
 
 ------------------------------------------------------------------------------
@@ -286,14 +286,14 @@ data BuildSignal a =
   | BufferFull
       {-# UNPACK #-} !Int
       {-# UNPACK #-} !(Ptr Word8)
-                     (BuildStep a)
+                     (BufferRange -> IO (BuildSignal a))
   | InsertChunk
       {-# UNPACK #-} !(Ptr Word8)
                      S.ByteString
-                     (BuildStep a)
-#if MIN_VERSION_base(4,14,0)
-type instance BuildSignal @@ a = ()
-#endif
+                     (BufferRange -> IO (BuildSignal a))
+-- #if MIN_VERSION_base(4,14,0)
+-- type instance BuildSignal @@ a = ()
+-- #endif
 
 -- | Signal that the current 'BuildStep' is done and has computed a value.
 {-# INLINE done #-}
@@ -464,6 +464,9 @@ flush = builder step
 -- use 'Builder's, as sequencing them is slightly cheaper than sequencing
 -- 'Put's because they do not carry around a computed value.
 newtype Put a = Put { unPut :: forall r. (a -> BuildStep r) -> BuildStep r }
+#if MIN_VERSION_base(4,14,0)
+instance Total Put
+#endif
 
 -- | Construct a 'Put' action. In contrast to 'BuildStep's, 'Put's are
 -- referentially transparent in the sense that sequencing the same 'Put'
