@@ -3,9 +3,15 @@
 -- This is needed as a workaround for an old bug in GHC 7.0.1 (Trac #4498)
 {-# LANGUAGE MonoPatBinds #-}
 #endif
-#if __GLASGOW_HASKELL__ >= 703
+#if __GLASGOW_HASKELL__ >= 703 && __GLASGOW_HASKELL__  <= 910
+{-# LANGUAGE Unsafe #-}
+#else
 {-# LANGUAGE Unsafe #-}
 #endif
+#if MIN_VERSION_base(4,16,0)
+{-# LANGUAGE QuantifiedConstraints #-}
+#endif
+
 {-# OPTIONS_HADDOCK not-home #-}
 -- | Copyright : (c) 2010 - 2011 Simon Meier
 -- License     : BSD3-style (see LICENSE)
