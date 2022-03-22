@@ -360,9 +360,9 @@ newtype Builder = Builder (forall r. BuildStep r -> BuildStep r)
 -- referentially transparent.
 {-# INLINE builder #-}
 builder :: (forall r.
-#if MIN_VERSION_base(4,16,0)
-            (BuildSignal @ r) =>
-#endif
+-- #if MIN_VERSION_base(4,16,0)
+--             (BuildSignal @ r) =>
+-- #endif
             BuildStep r -> BuildStep r)
         -- ^ A function that fills a 'BufferRange', calls the continuation with
         -- the updated 'BufferRange' once its done, and signals its caller how
@@ -469,9 +469,9 @@ newtype Put a = Put { unPut :: forall r. (a -> BuildStep r) -> BuildStep r }
 -- multiple times yields every time the same value with the same side-effect.
 {-# INLINE put #-}
 put :: (forall r.
-#if MIN_VERSION_base(4,16,0)
-        BuildSignal @ r => 
-#endif
+-- #if MIN_VERSION_base(4,16,0)
+--         BuildSignal @ r => 
+-- #endif
         (a -> BuildStep r) -> BuildStep r)
        -- ^ A function that fills a 'BufferRange', calls the continuation with
        -- the updated 'BufferRange' and its computed value once its done, and
