@@ -9,7 +9,7 @@
 {-# LANGUAGE Unsafe #-}
 #endif
 #if MIN_VERSION_base(4,16,0)
-{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE QuantifiedConstraints, ExplicitNamespaces, TypeOperators, TypeFamilies #-}
 #endif
 
 {-# OPTIONS_HADDOCK not-home #-}
@@ -170,6 +170,9 @@ import           System.IO.Unsafe (unsafeDupablePerformIO)
 #else
 import           Foreign
 import           GHC.IO (unsafeDupablePerformIO)
+#endif
+#if MIN_VERSION_base(4,16,0)
+import GHC.Types (type(@))
 #endif
 
 ------------------------------------------------------------------------------
@@ -356,7 +359,11 @@ newtype Builder = Builder (forall r. BuildStep r -> BuildStep r)
 -- | Construct a 'Builder'. In contrast to 'BuildStep's, 'Builder's are
 -- referentially transparent.
 {-# INLINE builder #-}
-builder :: (forall r. BuildStep r -> BuildStep r)
+builder :: (forall r.
+#if MIN_VERSION_base(4,16,0)
+            (BuildSignal @ r) =>
+#endif
+            BuildStep r -> BuildStep r)
         -- ^ A function that fills a 'BufferRange', calls the continuation with
         -- the updated 'BufferRange' once its done, and signals its caller how
         -- to proceed using 'done', 'bufferFull', or 'insertChunk'.
@@ -461,7 +468,11 @@ newtype Put a = Put { unPut :: forall r. (a -> BuildStep r) -> BuildStep r }
 -- referentially transparent in the sense that sequencing the same 'Put'
 -- multiple times yields every time the same value with the same side-effect.
 {-# INLINE put #-}
-put :: (forall r. (a -> BuildStep r) -> BuildStep r)
+put :: (forall r.
+#if MIN_VERSION_base(4,16,0)
+        BuildSignal @ r => 
+#endif
+        (a -> BuildStep r) -> BuildStep r)
        -- ^ A function that fills a 'BufferRange', calls the continuation with
        -- the updated 'BufferRange' and its computed value once its done, and
        -- signals its caller how to proceed using 'done', 'bufferFull', or
@@ -802,7 +813,9 @@ putToLazyByteStringWith strategy k p =
 ensureFree :: Int -> Builder
 ensureFree minFree =
     builder step
+    -- (forall r. BuildStep r -> BuildStep r) -> Builder
   where
+    step :: (forall r. BuildStep r -> BuildStep r)
     step k br@(BufferRange op ope)
       | ope `minusPtr` op < minFree = return $ bufferFull minFree op k
       | otherwise                   = k br
@@ -845,6 +858,7 @@ byteStringThreshold :: Int -> S.ByteString -> Builder
 byteStringThreshold maxCopySize =
     \bs -> builder $ step bs
   where
+    step :: forall r. S.ByteString -> BuildStep r -> BuildStep r
     step bs@(S.BS _ len) !k br@(BufferRange !op _)
       | len <= maxCopySize = byteStringCopyStep bs k br
       | otherwise          = return $ insertChunk op bs k
