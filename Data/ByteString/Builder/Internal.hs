@@ -354,7 +354,11 @@ fillWithBuildStep step fDone fFull fChunk !br = do
 -- They are 'Monoid's where
 --   'mempty' is the zero-length sequence and
 --   'mappend' is concatenation, which runs in /O(1)/.
-newtype Builder = Builder (forall r. BuildStep r -> BuildStep r)
+newtype Builder = Builder (forall r.
+#if MIN_VERSION_base(4,16,0)
+                            (IO @ BuildSignal r, BuildSignal @ r) =>
+#endif
+                            BuildStep r -> BuildStep r)
 
 -- | Construct a 'Builder'. In contrast to 'BuildStep's, 'Builder's are
 -- referentially transparent.
@@ -462,7 +466,11 @@ flush = builder step
 -- and 'fromPut' convert between these two types. Where possible, you should
 -- use 'Builder's, as sequencing them is slightly cheaper than sequencing
 -- 'Put's because they do not carry around a computed value.
-newtype Put a = Put { unPut :: forall r. (a -> BuildStep r) -> BuildStep r }
+newtype Put a = Put { unPut :: forall r.
+#if MIN_VERSION_base(4,16,0)
+            (IO @ BuildSignal r, BuildSignal @ r) =>
+#endif
+                      (a -> BuildStep r) -> BuildStep r }
 
 -- | Construct a 'Put' action. In contrast to 'BuildStep's, 'Put's are
 -- referentially transparent in the sense that sequencing the same 'Put'
