@@ -356,7 +356,7 @@ fillWithBuildStep step fDone fFull fChunk !br = do
 --   'mappend' is concatenation, which runs in /O(1)/.
 newtype Builder = Builder (forall r.
 #if MIN_VERSION_base(4,16,0)
-                            (IO @ BuildSignal r, BuildSignal @ r) =>
+                            BuildSignal @ r =>
 #endif
                             BuildStep r -> BuildStep r)
 
@@ -468,7 +468,7 @@ flush = builder step
 -- 'Put's because they do not carry around a computed value.
 newtype Put a = Put { unPut :: forall r.
 #if MIN_VERSION_base(4,16,0)
-            (IO @ BuildSignal r, BuildSignal @ r) =>
+                       BuildSignal @ r =>
 #endif
                       (a -> BuildStep r) -> BuildStep r }
 
