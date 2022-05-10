@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP, BangPatterns, ScopedTypeVariables #-}
-{-# LANGUAGE MagicHash, UnboxedTuples, PatternGuards #-}
+{-# LANGUAGE MagicHash, UnboxedTuples, PatternGuards, RankNTypes #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 #if __GLASGOW_HASKELL__ == 700
 -- This is needed as a workaround for an old bug in GHC 7.0.1 (Trac #4498)
@@ -557,8 +557,9 @@ primBounded w x =
     -- It is important to avoid recursive 'BuildStep's where possible, as
     -- their closure allocation is expensive. Using 'ensureFree' allows the
     -- 'step' to assume that at least 'sizeBound w' free space is available.
-    ensureFree (I.sizeBound w) `mappend` builder step
+    ensureFree (I.sizeBound w) `mappend` builder (\ a b -> step a b)
   where
+    -- step :: _ -> BufferRange -> (forall r. BuildStep r -> BuildStep r)
     step k (BufferRange op ope) = do
         op' <- runB w x op
         let !br' = BufferRange op' ope
@@ -594,8 +595,9 @@ primBounded w x =
 {-# INLINE primMapListBounded #-}
 primMapListBounded :: BoundedPrim a -> [a] -> Builder
 primMapListBounded w xs0 =
-    builder $ step xs0
+    builder $ \ a b -> step xs0 a b
   where
+    -- step :: a -> _ -> BufferRange -> (forall r. BuildStep r -> BuildStep r)
     step xs1 k (BufferRange op0 ope0) =
         go xs1 op0
       where
@@ -615,7 +617,7 @@ primMapListBounded w xs0 =
 {-# INLINE primUnfoldrBounded #-}
 primUnfoldrBounded :: BoundedPrim b -> (a -> Maybe (b, a)) -> a -> Builder
 primUnfoldrBounded w f x0 =
-    builder $ fillWith x0
+    builder $ \ a b -> fillWith x0 a b
   where
     fillWith x k (BufferRange op0 ope0) =
         go (f x) op0
@@ -643,6 +645,7 @@ primMapByteStringBounded w =
     \bs -> builder $ step bs
   where
     bound = I.sizeBound w
+    step :: S.ByteString -> (forall r. BuildStep r -> BuildStep r)
     step (S.BS ifp isize) !k =
         goBS (unsafeForeignPtrToPtr ifp)
       where
