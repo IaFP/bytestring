@@ -19,7 +19,7 @@ jobs:
         os: [ubuntu-latest]
         ghc: ['7.0.4', '7.2.2', '7.4.2', '7.6.3', '7.8.4']
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Update cabal package database
       run: cabal update
     - uses: actions/cache@v3
@@ -60,7 +60,7 @@ jobs:
         - os: ubuntu-16.04 # testing that cbits are compatible with gcc-5
           ghc: 'latest'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: haskell/actions/setup@v1
       id: setup-haskell-cabal
       with:
@@ -95,7 +95,7 @@ jobs:
     # See https://github.com/vmactions/freebsd-vm#under-the-hood.
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Test
       id: build-freebsd
       uses: vmactions/freebsd-vm@v0.1.6
